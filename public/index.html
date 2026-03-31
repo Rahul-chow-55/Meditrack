@@ -1,0 +1,855 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <title>MediTrack | Google Secure Login</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Poppins:400,600&display=swap">
+  <link rel="stylesheet" href="style.css">
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+</head>
+
+<body class="dark"> <!-- Defaulting to dark as per Azure theme preference -->
+
+  <!-- ─── AUTH SCREEN ────────────────────────────────────── -->
+  <div id="auth-screen" class="auth-screen">
+    <div class="auth-bg">
+      <div class="auth-orb orb1"></div>
+      <div class="auth-orb orb2"></div>
+    </div>
+    <div class="auth-card">
+      <div class="auth-logo">
+        <span class="logo-icon"></span>
+        <h1>MediTrack</h1>
+        <p style="text-transform: uppercase; letter-spacing: 2px; font-weight: 600; opacity: 0.5; font-size: 0.7rem;">
+          Advanced Role-Based Health System</p>
+      </div>
+      <!-- Email Login Form -->
+      <!-- Combined Login Form -->
+      <div id="login-form">
+        <h2>Welcome Back</h2>
+        <div class="form-group">
+          <label>Email Address</label>
+          <input id="login-email" type="email" placeholder="you@example.com">
+        </div>
+        <div class="form-group">
+          <label style="display: flex; justify-content: space-between;">
+            Password
+            <span onclick="toggleAuthMode('forgot')"
+              style="cursor:pointer; color:var(--primary); font-size: 0.8em; text-decoration:underline;">Forgot?</span>
+          </label>
+          <input id="login-password" type="password" placeholder="••••••••">
+        </div>
+
+        <div id="login-error" class="form-error"></div>
+        <button class="btn btn-primary btn-full" onclick="login()">Sign In</button>
+
+        <div class="auth-divider">OR</div>
+
+        <!-- Google Login (Initialized via JS in app.js) -->
+        <div id="google-btn-container" style="display: flex; justify-content: center; margin-bottom: 20px;"></div>
+
+        <p class="auth-switch" style="margin-top: 15px;">
+          Need an account? <span onclick="toggleAuthMode('signup')"
+            style="cursor:pointer; color:var(--primary); text-decoration:underline;">Sign Up</span>
+        </p>
+      </div>
+
+      <!-- Signup Form (Restored) -->
+      <div id="signup-form" class="hidden">
+        <h2>Create Account</h2>
+        <div class="form-group">
+          <label>Full Name</label>
+          <input id="signup-name" type="text" placeholder="John Doe">
+        </div>
+        <div class="form-group">
+          <label>Email</label>
+          <input id="signup-email" type="email" placeholder="you@example.com">
+        </div>
+        <div class="form-group">
+          <label>Phone Number</label>
+          <input id="signup-phone" type="tel" placeholder="+91 9876543210">
+        </div>
+        <div class="form-group">
+          <label>Password</label>
+          <input id="signup-password" type="password" placeholder="••••••••">
+        </div>
+        <div id="signup-error" class="form-error"></div>
+        <button class="btn btn-primary btn-full" onclick="register()">Sign Up</button>
+        <p class="auth-switch" style="margin-top: 15px;">
+          Already have an account? <span onclick="toggleAuthMode('login')"
+            style="cursor:pointer; color:var(--primary); text-decoration:underline;">Sign In</span>
+        </p>
+      </div>
+
+      <!-- Forgot Password Form (Restored) -->
+      <div id="forgot-form" class="hidden">
+        <h2 id="forgot-title">Reset Password</h2>
+        <div id="forgot-step-1">
+          <p style="margin-bottom: 15px; opacity: 0.8; font-size: 0.9em;">Enter your registered email and we'll send you
+            a reset link.</p>
+          <div class="form-group">
+            <label>Email Address</label>
+            <input id="forgot-email" type="email" placeholder="you@example.com">
+          </div>
+          <div id="forgot-send-error" class="form-error"></div>
+          <button class="btn btn-primary btn-full" onclick="sendForgotPasswordEmail()">Get Reset Link</button>
+        </div>
+        <div id="forgot-step-2" class="hidden">
+          <input id="forgot-new-password" type="password" placeholder="New Password">
+          <div id="forgot-reset-error" class="form-error"></div>
+          <div id="forgot-success"
+            style="color: var(--success); font-weight: 600; text-align: center; margin-top: 10px;"></div>
+          <button class="btn btn-primary btn-full" onclick="resetPasswordByEmail()">Update Password</button>
+        </div>
+        <p class="auth-switch" style="margin-top: 15px;">
+          Back to <span onclick="toggleAuthMode('login')"
+            style="cursor:pointer; color:var(--primary); text-decoration:underline;">Sign In</span>
+        </p>
+      </div>
+
+      <!-- OTP Login Form (Restored) -->
+      <div id="otp-form" class="hidden">
+        <h2>Phone OTP Login</h2>
+        <div id="otp-step-1">
+          <div class="form-group">
+            <label>Phone Number</label>
+            <input id="otp-phone" type="tel" placeholder="+91 9876543210">
+          </div>
+          <div id="otp-send-error" class="form-error"></div>
+          <button class="btn btn-primary btn-full" onclick="sendOtp()">Send OTP</button>
+        </div>
+        <div id="otp-step-2" class="hidden">
+          <div class="form-group" style="margin-top: 20px;">
+            <label>6-Digit OTP</label>
+            <input id="otp-code" type="text" placeholder="000000" maxlength="6"
+              style="letter-spacing: 8px; text-align: center; font-size: 1.3rem;">
+          </div>
+          <div id="otp-verify-error" class="form-error"></div>
+          <button class="btn btn-primary btn-full" onclick="verifyOtp()">Verify & Login</button>
+          <p class="auth-switch" style="margin-top: 15px;">
+            Didn't get code? <span onclick="resendOtp()"
+              style="cursor:pointer; color:var(--primary); text-decoration:underline;">Resend</span>
+          </p>
+        </div>
+        <p class="auth-switch" style="margin-top: 15px;">
+          Use email? <span onclick="toggleAuthMode('login')"
+            style="cursor:pointer; color:var(--primary); text-decoration:underline;">Sign In</span>
+        </p>
+      </div>
+
+      <!-- MFA Verification Form -->
+      <div id="mfa-form" class="hidden">
+        <h2>Verify Authenticator</h2>
+        <p id="mfa-info" style="margin-bottom: 20px; opacity: 0.8; font-size: 0.9em;">A code has been sent to your MFA
+          email.</p>
+        <div class="form-group">
+          <label>6-Digit Code</label>
+          <input id="mfa-code" type="text" placeholder="000000" maxlength="6"
+            style="letter-spacing: 8px; text-align: center; font-size: 1.3rem; font-weight: 700;">
+        </div>
+        <div id="mfa-error" class="form-error"></div>
+        <button class="btn btn-primary btn-full" onclick="verifyMfaLogin()">Verify & Continue</button>
+        <p class="auth-switch" style="margin-top: 15px;">
+          Didn't get code? <span onclick="resendMfaCode()"
+            style="cursor:pointer; color:var(--primary); text-decoration:underline;">Resend</span>
+        </p>
+      </div>
+
+      <!-- Wallet Link/Email OTP Form -->
+      <div id="wallet-auth" class="hidden">
+        <h2 id="wallet-auth-header">Verify Email</h2>
+        <p id="wallet-auth-info" style="margin-bottom: 20px; opacity: 0.8; font-size: 0.9em;">Link your wallet to an
+          account.</p>
+        <div id="wallet-link-step-1">
+          <div class="form-group">
+            <label>Confirm Email</label>
+            <input id="wallet-email" type="email" placeholder="email@example.com">
+          </div>
+          <button class="btn btn-primary btn-full" onclick="sendWalletLinkOtp()">Send Verification Code</button>
+        </div>
+        <div id="wallet-link-step-2" class="hidden">
+          <div class="form-group">
+            <label>Verification Code</label>
+            <input id="wallet-otp" type="text" maxlength="6"
+              style="letter-spacing: 8px; text-align: center; font-size: 1.3rem;">
+          </div>
+          <button class="btn btn-primary btn-full" onclick="verifyWalletOtp()">Verify & Login</button>
+          <p class="auth-switch" style="margin-top: 15px;">
+            <span onclick="toggleAuthMode('login')"
+              style="cursor:pointer; color:var(--primary); text-decoration:underline;">Cancel</span>
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── APP SCREEN ─────────────────────────────────────── -->
+  <div id="app-screen" class="hidden">
+    <nav class="navbar">
+      <span class="logo">MediTrack <span id="role-badge" class="badge">User</span></span>
+      <div style="font-size: 0.8em; margin-left: 15px; opacity: 0.8; display: flex; align-items: center; gap: 5px;">
+        <span style="width: 8px; height: 8px; border-radius: 50%; background: #00ff00; display: inline-block;"></span>
+        Online: <b id="online-count-val">1</b>
+      </div>
+      <div class="nav-tabs">
+        <!-- User Nav -->
+        <div id="nav-group-user" class="nav-group hidden">
+          <button class="nav-tab active" onclick="switchTab('medicines')">My Medicines</button>
+          <button class="nav-tab" onclick="switchTab('user-appointments')">My Appointments</button>
+          <button class="nav-tab" onclick="switchTab('doctors')">Doctor Connect</button>
+        </div>
+        <!-- Doctor Nav -->
+        <div id="nav-group-doctor" class="nav-group hidden">
+          <button class="nav-tab active" onclick="switchTab('doctor-appointments')">Schedule</button>
+          <button class="nav-tab" onclick="switchTab('doctor-monitor')">🩺 Monitor</button>
+          <button class="nav-tab" onclick="switchTab('doctor-analytics')">📈 Analytics</button>
+        </div>
+        <!-- Admin Nav -->
+        <div id="nav-group-admin" class="nav-group hidden">
+          <button class="nav-tab active" onclick="switchTab('admin-dash')">Dashboard</button>
+          <button class="nav-tab" onclick="switchTab('admin-appointments')">📋 Appointments</button>
+          <button class="nav-tab" onclick="switchTab('create-doctor')">Create Doctor</button>
+        </div>
+
+        <button class="nav-tab" onclick="switchTab('notifications')">Notifications</button>
+        <button class="nav-tab" onclick="switchTab('profile')">My Profile</button>
+        <button class="toggle-mode" onclick="toggleTheme()" title="Toggle light/dark mode">🌙</button>
+        <button class="nav-tab" onclick="logout()" title="Logout">🚪</button>
+      </div>
+    </nav>
+
+    <main>
+      <!-- ROLE PANELS -->
+      <div id="panel-user" class="role-panel hidden">
+        <section id="tab-medicines" class="tab-content active">
+          <form class="med-form" onsubmit="event.preventDefault(); addMedicine();">
+            <input type="text" id="medName" placeholder="Medicine Name" required>
+            <input type="time" id="medTime" required>
+            <button type="submit">Add Medicine</button>
+          </form>
+          <div class="med-lists-container">
+            <div class="med-list">
+              <h3>Medicines To Take</h3>
+              <ul class="med-ul" id="ulToTake"></ul>
+            </div>
+            <div class="med-list">
+              <h3>Medicines Taken</h3>
+              <ul class="med-ul" id="ulTaken"></ul>
+            </div>
+          </div>
+        </section>
+
+        <section id="tab-user-appointments" class="tab-content">
+          <div class="doctor-category">
+            <h3>Upcoming Appointments</h3>
+            <div id="user-appointments-list" class="med-list" style="padding: 18px;">
+              <ul class="med-ul" id="user-apt-ul"></ul>
+            </div>
+          </div>
+        </section>
+
+        <section id="tab-doctors" class="tab-content">
+          <div class="med-form"
+            style="margin-bottom: 30px; display: flex; gap: 10px; align-items: center; background: rgba(0, 120, 212, 0.05); border: 1px solid rgba(0, 120, 212, 0.1);">
+            <div style="position: relative; flex: 1;">
+              <span
+                style="position: absolute; left: 15px; top: 50%; transform: translateY(-50%); opacity: 0.6;">🔍</span>
+              <input type="text" id="doctor-search" placeholder="Search by doctor specialization (e.g. Cardiologist)"
+                oninput="filterDoctors()"
+                style="padding-left: 45px; width: 100%; border-radius: 12px; border: 1px solid rgba(0,0,0,0.1); background: var(--secondary);">
+            </div>
+            <button class="btn-primary" onclick="filterDoctors()"
+              style="padding: 12px 24px; border-radius: 12px; font-size: 0.95rem;">Search</button>
+          </div>
+          <div class="doctor-section" id="doctors-container">
+            <!-- Rendered by JS -->
+          </div>
+        </section>
+
+        </section>
+      </div>
+  </div>
+
+  <div id="panel-doctor" class="role-panel hidden">
+    <section id="tab-doctor-appointments" class="tab-content active">
+      <div class="doctor-category">
+        <h2>Patient Appointments</h2>
+        <div id="doctor-appointments-list" class="med-list" style="padding: 18px;">
+          <ul class="med-ul" id="doctor-apt-ul"></ul>
+        </div>
+      </div>
+    </section>
+
+    <section id="tab-doctor-analytics" class="tab-content">
+      <div class="doctor-category">
+        <h2 style="margin-bottom: 25px;">📊 Performance Analytics</h2>
+        <div id="doctor-insights-container" class="med-lists-container" style="margin-bottom: 30px;">
+          <!-- Rendered by JS -->
+        </div>
+        <h3>Financial Overview</h3>
+        <div class="med-list"
+          style="margin-top: 15px; background: linear-gradient(135deg, rgba(16, 124, 16, 0.1), rgba(16, 124, 16, 0.02)); padding: 25px;">
+          <div style="font-size: 0.9em; opacity: 0.7;">Total Revenue Generated</div>
+          <div id="doc-rev-val" style="font-size: 2.2rem; font-weight: 700; color: var(--success); margin: 10px 0;">
+            ₹0</div>
+          <p style="font-size: 0.8em; opacity: 0.6;">Based on confirmed and completed appointments.</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="tab-doctor-monitor" class="tab-content">
+      <div class="doctor-category">
+        <h2 style="margin-bottom: 25px;">🩺 Patient Adherence Monitor</h2>
+        <p style="opacity: 0.7; margin-bottom: 20px;">Tracking the medication progress of patients you've prescribed to.</p>
+        <div id="doctor-monitor-list">
+          <!-- Rendered by JS -->
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <div id="panel-admin" class="role-panel hidden">
+    <section id="tab-admin-dash" class="tab-content active">
+      <div class="doctor-category">
+        <h2>System Dashboard</h2>
+        <div class="med-lists-container" id="admin-stats" style="margin-bottom: 24px;"></div>
+
+        <h3>User Management</h3>
+        <div id="admin-users-list" class="med-list" style="margin-top: 15px;">
+          <ul class="med-ul" id="admin-user-ul"></ul>
+        </div>
+      </div>
+    </section>
+
+    <section id="tab-admin-appointments" class="tab-content">
+      <div class="doctor-category">
+        <h2>📋 Appointments Overview</h2>
+        <div style="display:flex; gap:10px; margin-bottom:18px; flex-wrap:wrap;">
+          <button class="btn" id="apt-filter-all" onclick="filterAdminApts('all')"
+            style="padding:7px 18px; border-radius:20px; background:var(--primary); color:#fff; border:none;">All</button>
+          <button class="btn" id="apt-filter-pending" onclick="filterAdminApts('pending')"
+            style="padding:7px 18px; border-radius:20px; background:var(--secondary); border:1px solid var(--primary);">Pending</button>
+          <button class="btn" id="apt-filter-confirmed" onclick="filterAdminApts('confirmed')"
+            style="padding:7px 18px; border-radius:20px; background:var(--secondary); border:1px solid var(--success);">Confirmed</button>
+          <button class="btn" id="apt-filter-cancelled" onclick="filterAdminApts('cancelled')"
+            style="padding:7px 18px; border-radius:20px; background:var(--secondary); border:1px solid #ff4d4d;">Cancelled</button>
+        </div>
+        <div class="med-list" style="margin-top:0;">
+          <ul class="med-ul" id="admin-apt-ul"></ul>
+        </div>
+      </div>
+    </section>
+
+    <section id="tab-create-doctor" class="tab-content">
+      <div class="doctor-category">
+        <h2>Create Doctor Account</h2>
+        <div class="med-form" style="flex-direction: column; gap: 15px; align-items: stretch;">
+          <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+            <input type="text" id="doc-name" placeholder="Doctor Full Name" required style="flex: 1; min-width: 180px;">
+            <input type="email" id="doc-email" placeholder="Doctor Email" required style="flex: 1; min-width: 180px;">
+          </div>
+          <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+            <input type="text" id="doc-password" placeholder="Login Password" required
+              style="flex: 1; min-width: 180px;">
+            <input type="text" id="doc-specialty" placeholder="Specialty (e.g. Cardiologist)" required
+              style="flex: 1; min-width: 180px;">
+          </div>
+          <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+            <input type="text" id="doc-hospital" placeholder="Hospital Name" required
+              style="flex: 1; min-width: 180px;">
+            <input type="number" id="doc-experience" placeholder="Years of Experience"
+              style="flex: 1; min-width: 100px;">
+          </div>
+          <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+            <input type="number" id="doc-fee" placeholder="Consultation Fee (₹)" style="flex: 1; min-width: 100px;">
+            <input type="text" id="doc-image" placeholder="Doctor Image URL (e.g. https://...)"
+              style="flex: 1; min-width: 180px;">
+          </div>
+          <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+            <input type="text" id="doc-bio" placeholder="Short Bio" style="flex: 1; min-width: 180px;">
+          </div>
+          <div id="create-doctor-error" class="form-error"></div>
+          <div id="create-doctor-success" style="color: var(--success); font-weight: 600; min-height: 22px;"></div>
+          <button class="btn-primary" onclick="createDoctorAccount()" style="padding: 12px 24px;">Create Doctor
+            Account</button>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- COMMON SECTIONS -->
+  <section id="tab-notifications" class="tab-content">
+    <div class="notification-list">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h3 style="margin: 0;">Notifications</h3>
+        <button class="btn" onclick="clearAllNotifications()"
+          style="padding: 6px 14px; background: rgba(255, 77, 77, 0.1); color: #ff4d4d; border: 1px solid rgba(255, 77, 77, 0.2); font-size: 0.85em;">Clear
+          All</button>
+      </div>
+      <div id="notifications-list"></div>
+    </div>
+  </section>
+
+  <section id="tab-profile" class="tab-content">
+    <div class="profile-container">
+      <aside class="settings-sidebar">
+        <div class="sidebar-header">Settings</div>
+        <ul class="settings-nav">
+          <li class="active" onclick="switchSettingTab(this, 'edit-profile')"><span>👤</span> Edit Profile</li>
+          <li onclick="switchSettingTab(this, 'privacy')"><span>🔒</span> Privacy and Security</li>
+          <li onclick="switchSettingTab(this, 'notifications-config')"><span>🔔</span> Notifications</li>
+          <li onclick="switchSettingTab(this, 'theme-settings')"><span>🌓</span> Appearance</li>
+          <li onclick="logout()" style="color: var(--danger); margin-top: 20px;"><span>🚪</span> Logout</li>
+        </ul>
+      </aside>
+
+      <div class="settings-content">
+        <!-- Edit Profile Panel -->
+        <div id="panel-edit-profile" class="setting-panel active">
+          <h2>Edit Profile</h2>
+          <div class="profile-photo-edit">
+            <img id="profile-img-settings" src="https://randomuser.me/api/portraits/women/45.jpg" alt="Profile">
+            <div>
+              <h4 id="profile-name-settings">User Name</h4>
+              <button onclick="document.getElementById('profile-upload').click()">Change Profile Photo</button>
+              <input type="file" id="profile-upload" class="hidden" accept="image/*"
+                onchange="uploadProfilePhoto(this)">
+            </div>
+          </div>
+
+          <div class="edit-profile-form">
+            <div class="form-group">
+              <label style="color: var(--text);">Name</label>
+              <input type="text" id="edit-name" placeholder="Full Name"
+                style="background: var(--secondary); border: 1px solid rgba(0,0,0,0.1); color: var(--text);">
+            </div>
+            <div class="form-group">
+              <label style="color: var(--text);">Email</label>
+              <input type="email" id="edit-email" placeholder="Email" readonly
+                style="opacity: 0.6; background: var(--secondary); border: 1px solid rgba(0,0,0,0.1); color: var(--text);">
+            </div>
+            <div class="form-group">
+              <label style="color: var(--text);">Bio</label>
+              <input type="text" id="edit-bio" placeholder="Bio"
+                style="background: var(--secondary); border: 1px solid rgba(0,0,0,0.1); color: var(--text);">
+            </div>
+            <button class="btn-primary" style="padding: 10px 24px; font-size: 0.9rem;" onclick="updateProfile()">Submit
+              Changes</button>
+          </div>
+        </div>
+
+        <!-- Privacy Panel -->
+        <div id="panel-privacy" class="setting-panel">
+          <h2>Privacy and Security</h2>
+          <!-- Two-Factor Authentication (MFA) Section -->
+          <div class="setting-item"
+            style="display: block; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 20px; margin-bottom: 20px;">
+            <div id="mfa-btn-container">
+              <button class="btn" onclick="toggleMfaForm(true)"
+                style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: var(--text); padding: 10px 20px; border-radius: 8px; font-weight: 500; display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                <span id="mfa-status-icon">🛡️</span> <span id="mfa-status-text">Two-Factor Authentication</span>
+              </button>
+            </div>
+
+            <div id="mfa-form-container" style="display: none;">
+              <h4 style="margin-bottom: 8px; display: flex; align-items: center; gap: 8px;">🛡️ Two-Factor
+                Authentication</h4>
+              <p style="margin-bottom: 15px; opacity: 0.7; font-size: 0.85rem;">Secure your account by requiring an
+                email OTP for every login.</p>
+              <div style="max-width: 350px; display: grid; gap: 12px;">
+                <div class="form-group" style="margin-bottom: 0;">
+                  <input id="mfa-email" type="email" placeholder="MFA Email" class="input-field"
+                    style="width: 100%; border: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.2);">
+                </div>
+                <div id="mfa-error" class="form-error" style="margin: 0;"></div>
+                <div style="display: flex; gap: 10px; margin-top: 5px;">
+                  <button id="mfa-action-btn" class="btn btn-primary" onclick="confirmMfaToggle()"
+                    style="padding: 10px 20px; font-size: 0.9rem;">Enable MFA</button>
+                  <button class="btn" onclick="toggleMfaForm(false)"
+                    style="background: transparent; border: 1px solid rgba(255,255,255,0.2); color: var(--text); padding: 10px 20px; font-size: 0.9rem; cursor: pointer;">Cancel</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Private Account Section -->
+          <div class="setting-item"
+            style="display: block; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 20px; margin-bottom: 20px;">
+            <div id="pa-btn-container">
+              <button class="btn" onclick="togglePrivateAccount()" id="pa-toggle-btn"
+                style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: var(--text); padding: 10px 20px; border-radius: 8px; font-weight: 500; display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                <span id="pa-status-icon">🔓</span> <span id="pa-status-text">Make Account Private</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Change Password Section -->
+          <div class="setting-item"
+            style="display: block; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 20px; margin-top: 20px;">
+            <div id="cp-btn-container">
+              <button class="btn" onclick="togglePasswordForm(true)"
+                style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: var(--text); padding: 10px 20px; border-radius: 8px; font-weight: 500; display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                <span>🔑</span> Change Account Password
+              </button>
+            </div>
+
+            <div id="cp-form-container" style="display: none;">
+              <h4 style="margin-bottom: 8px; display: flex; align-items: center; gap: 8px;">🔑 Change Password</h4>
+              <p style="margin-bottom: 15px; opacity: 0.7; font-size: 0.85rem;">Update your account password to stay
+                secure.</p>
+              <div style="max-width: 350px; display: grid; gap: 12px;">
+                <div class="form-group" style="margin-bottom: 0;">
+                  <input id="cp-old-password" type="password" placeholder="Current Password" class="input-field"
+                    style="width: 100%; border: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.2);">
+                </div>
+                <div class="form-group" style="margin-bottom: 0;">
+                  <input id="cp-new-password" type="password" placeholder="New Password" class="input-field"
+                    style="width: 100%; border: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.2);">
+                </div>
+                <div class="form-group" style="margin-bottom: 0;">
+                  <input id="cp-confirm-password" type="password" placeholder="Confirm New Password" class="input-field"
+                    style="width: 100%; border: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.2);">
+                </div>
+                <div id="cp-error" class="form-error" style="margin: 0;"></div>
+                <div style="display: flex; gap: 10px; margin-top: 5px;">
+                  <button class="btn btn-primary" onclick="changePassword()"
+                    style="padding: 10px 20px; font-size: 0.9rem;">Update Password</button>
+                  <button class="btn" onclick="togglePasswordForm(false)"
+                    style="background: transparent; border: 1px solid rgba(255,255,255,0.2); color: var(--text); padding: 10px 20px; font-size: 0.9rem; cursor: pointer;">Cancel</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Notifications Panel -->
+        <div id="panel-notifications-config" class="setting-panel">
+          <h2>Notifications</h2>
+          <div class="setting-item">
+            <div class="setting-info">
+              <h4>Pause All</h4>
+              <p>Temporarily pause push notifications.</p>
+            </div>
+            <label class="switch">
+              <input type="checkbox">
+              <span class="slider"></span>
+            </label>
+          </div>
+          <div class="setting-item">
+            <div class="setting-info">
+              <h4>Email Notifications</h4>
+              <p>Receive updates via your registered email.</p>
+            </div>
+            <label class="switch">
+              <input type="checkbox" checked>
+              <span class="slider"></span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Appearance Panel -->
+        <div id="panel-theme-settings" class="setting-panel">
+          <h2>Appearance</h2>
+          <div class="setting-item">
+            <div class="setting-info">
+              <h4>Dark Mode</h4>
+              <p>Adjust the appearance to reduce glare and give your eyes a break.</p>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="dark-mode-toggle-settings" onchange="toggleTheme()">
+              <span class="slider"></span>
+            </label>
+          </div>
+        </div>
+
+      </div>
+    </div>
+    </div>
+    </div>
+  </section>
+  </main>
+
+  <!-- Multi-Step Booking Modal -->
+  <div class="modal" id="calendarModal">
+    <div class="modal-content" style="max-width: 450px;">
+      <button class="modal-close" onclick="closeModal('calendarModal')">&times;</button>
+      <h3 id="book-doc-name">Book Appointment</h3>
+
+      <!-- STEP 1: Date & Time -->
+      <div id="booking-step-1" class="booking-step">
+        <div style="text-align: left;">
+          <label style="display: block; margin-top: 15px; margin-bottom: 5px;"><b>Select Date</b></label>
+          <input type="date" id="appointDate" required onchange="generateTimeSlots()"
+            style="width: 100%; padding: 12px; border-radius: 10px; border: 1px solid rgba(0,0,0,0.1); background: var(--secondary); color: var(--text);">
+        </div>
+        <div style="text-align: left; margin: 15px 0 25px;">
+          <label style="display: block; margin-bottom: 5px;"><b>Available Slots</b></label>
+          <div id="time-slots" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 8px;">
+            <div style="opacity: 0.6; font-size: 0.9em;">Select a date first</div>
+          </div>
+          <input type="hidden" id="appointTime" required>
+        </div>
+        <button class="btn-primary" onclick="goToBookingStep(2)" style="width: 100%;">Next: Patient Details</button>
+      </div>
+
+      <!-- STEP 2: Contact Details -->
+      <div id="booking-step-2" class="booking-step hidden">
+        <div style="text-align: left; margin-top: 15px;">
+          <div class="form-group">
+            <label>Phone Number</label>
+            <input type="tel" id="book-phone" placeholder="+91 9876543210"
+              style="width: 100%; padding: 12px; border-radius: 10px; border: 1px solid rgba(0,0,0,0.1); background: var(--secondary); color: var(--text);">
+          </div>
+          <div class="form-group" style="margin-top: 15px;">
+            <label>Email Address</label>
+            <input type="email" id="book-email" placeholder="patient@example.com"
+              style="width: 100%; padding: 12px; border-radius: 10px; border: 1px solid rgba(0,0,0,0.1); background: var(--secondary); color: var(--text);">
+          </div>
+        </div>
+        <div style="display: flex; gap: 10px; margin-top: 25px;">
+          <button class="btn" onclick="goToBookingStep(1)" style="flex: 1;">Back</button>
+          <button class="btn-primary" onclick="goToBookingStep(3)" style="flex: 1;">Next: Payment</button>
+        </div>
+      </div>
+
+      <!-- STEP 3: Payment -->
+      <div id="booking-step-3" class="booking-step hidden">
+        <div style="text-align: left; margin-top: 15px;">
+          <p style="margin-bottom: 15px; opacity: 0.8;">Choose your payment method to confirm booking.</p>
+          <div style="display: flex; flex-direction: column; gap: 10px;">
+            <label class="payment-option"
+              style="display: flex; align-items: center; gap: 10px; padding: 12px; background: var(--secondary); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; cursor: pointer;">
+              <input type="radio" name="paymentType" value="UPI" checked>
+              <span>UPI (GPay, PhonePe, etc.)</span>
+            </label>
+            <label class="payment-option"
+              style="display: flex; align-items: center; gap: 10px; padding: 12px; background: var(--secondary); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; cursor: pointer;">
+              <input type="radio" name="paymentType" value="Card">
+              <span>Credit / Debit Cards</span>
+            </label>
+          </div>
+        </div>
+        <div style="display: flex; gap: 10px; margin-top: 25px;">
+          <button class="btn" onclick="goToBookingStep(2)" style="flex: 1; background: var(--secondary);">Back</button>
+          <button class="btn-primary" onclick="generatePaymentQR()" style="flex: 1; background: var(--success);">Pay &
+            Confirm</button>
+        </div>
+      </div>
+
+      <!-- STEP 4: QR Payment -->
+      <div id="booking-step-4" class="booking-step hidden">
+        <div style="text-align: center; padding-top: 10px;">
+          <div id="paytm-badge"
+            style="background: #00baf2; color: white; display: inline-block; padding: 4px 12px; border-radius: 6px; font-weight: 800; font-size: 0.8em; margin-bottom: 25px;">
+            PAYTM / UPI SECURE</div>
+          <p style="margin-bottom: 12px; opacity: 0.9; font-weight: 600;">Scan to Pay Consultation Fee</p>
+          <div id="qrcode-container"
+            style="background: white; padding: 15px; border-radius: 12px; display: inline-block; margin-bottom: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
+          </div>
+          <div
+            style="text-align: center; background: rgba(16, 124, 16, 0.05); padding: 15px; border-radius: 12px; margin-bottom: 20px; border: 1px solid rgba(16, 124, 16, 0.1);">
+            <p style="font-size: 0.85em; color: var(--success); font-weight: 600;">System will automatically detect your
+              transfer from UPI ID linked to your phone/email.</p>
+          </div>
+          <input type="hidden" id="upi-transaction-id" value="AUTO_DETECTED">
+        </div>
+        <div style="display: flex; gap: 10px; margin-top: 5px;">
+          <button class="btn" onclick="goToBookingStep(3)" style="flex: 1; background: var(--secondary);">Back</button>
+          <button id="btn-submit-booking" class="btn-primary" onclick="bookAppointment()"
+            style="flex: 1; background: var(--success);">I've Completed Payment</button>
+        </div>
+      </div>
+
+      <!-- STEP 5: Verifying Payment -->
+      <div id="booking-step-5" class="booking-step hidden">
+        <div style="text-align: center; padding: 40px 20px;">
+          <div class="loader-ring"></div>
+          <h3 style="margin-top: 25px; color: var(--primary);">Verifying Payment</h3>
+          <p style="opacity: 0.7; font-size: 0.9rem; margin-top: 10px;">Connecting to bank secure servers to recognize
+            your transaction...</p>
+          <div id="verification-status" style="margin-top: 20px; font-weight: 600; color: var(--accent);">Recognizing
+            UTR ID...</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Receipt Modal -->
+  <div class="modal" id="receiptModal">
+    <div class="modal-content receipt-card" style="max-width: 480px; padding: 0; overflow: hidden; border: none;">
+      <div class="receipt-header"
+        style="background: linear-gradient(135deg, #107c10, #00b7c3); color: white; padding: 30px 20px; text-align: center;">
+        <div style="font-size: 3rem; margin-bottom: 10px;">✅</div>
+        <h2 style="margin: 0;">Payment Successful</h2>
+        <p style="opacity: 0.9; margin-top: 5px; font-size: 0.9rem;">Transaction ID: <span
+            id="r-txn-id">MTK92837482</span></p>
+      </div>
+      <div class="receipt-body" style="padding: 30px; text-align: left;">
+        <div
+          style="display: flex; justify-content: space-between; border-bottom: 1px dashed rgba(0,0,0,0.1); padding-bottom: 15px; margin-bottom: 15px;">
+          <span style="opacity: 0.6;">Patient Name</span>
+          <b id="r-patient-name">John Doe</b>
+        </div>
+        <div
+          style="display: flex; justify-content: space-between; border-bottom: 1px dashed rgba(0,0,0,0.1); padding-bottom: 15px; margin-bottom: 15px;">
+          <span style="opacity: 0.6;">Doctor Name</span>
+          <b id="r-doctor-name">Dr. Smith</b>
+        </div>
+        <div
+          style="display: flex; justify-content: space-between; border-bottom: 1px dashed rgba(0,0,0,0.1); padding-bottom: 15px; margin-bottom: 15px;">
+          <span style="opacity: 0.6;">Appointment Date</span>
+          <b id="r-date">2024-03-25</b>
+        </div>
+        <div
+          style="display: flex; justify-content: space-between; border-bottom: 1px dashed rgba(0,0,0,0.1); padding-bottom: 15px; margin-bottom: 15px;">
+          <span style="opacity: 0.6;">Time Slot</span>
+          <b id="r-time">10:00 AM</b>
+        </div>
+        <div
+          style="display: flex; justify-content: space-between; margin-top: 20px; padding: 15px; background: rgba(16, 124, 16, 0.05); border-radius: 12px;">
+          <span style="font-weight: 600;">Total Amount Paid</span>
+          <b style="color: #107c10; font-size: 1.2rem;" id="r-amount">₹500.00</b>
+        </div>
+        <div style="text-align: center; margin-top: 30px;">
+          <button class="btn-primary" onclick="closeModal('receiptModal')"
+            style="width: 100%; margin-bottom: 10px;">Done</button>
+          <button class="btn" onclick="window.print()"
+            style="width: 100%; background: var(--secondary); border: 1px solid rgba(0,0,0,0.1);">Download Bill</button>
+        </div>
+      </div>
+      <div style="background: var(--secondary); padding: 15px; text-align: center; font-size: 0.8rem; opacity: 0.6;">
+        MediTrack Digital Receipt &bull; Powered by Razorpay
+      </div>
+    </div>
+  </div>
+
+  <div id="toast-container"></div>
+  <audio id="alarm-sound" src="https://actions.google.com/sounds/v1/alarms/beep_short.ogg" preload="auto"></audio>
+
+  <!-- MFA Activation Modal -->
+  <div class="modal" id="mfaModal">
+    <div class="modal-content" style="max-width: 400px; text-align: left;">
+      <button class="modal-close"
+        onclick="closeModal('mfaModal'); document.getElementById('mfa-toggle').checked = false;">&times;</button>
+      <h3 style="color: var(--primary); margin-bottom: 15px;">Enable MFA</h3>
+      <p style="margin-bottom: 20px; font-size: 0.9em; opacity: 0.8;">Enter the email address where you want to receive
+        login verification codes.</p>
+      <div class="form-group">
+        <label style="color: var(--text);">MFA Email Address</label>
+        <input type="email" id="mfa-setup-email" placeholder="mfa@example.com"
+          style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid rgba(0,0,0,0.1); background: var(--secondary); color: var(--text);">
+      </div>
+      <button class="btn-primary" style="width: 100%;" onclick="confirmEnableMFA()">Enable MFA Now</button>
+    </div>
+  </div>
+  </div>
+
+  <!-- Rate Doctor Modal -->
+  <div class="modal" id="reviewModal">
+    <div class="modal-content" style="max-width: 440px; text-align: left;">
+      <button class="modal-close" onclick="closeModal('reviewModal')">&times;</button>
+      <h3 style="color: var(--primary); margin-bottom: 6px;">⭐ Rate Your Doctor</h3>
+      <p id="review-doctor-label" style="opacity:0.7; font-size:0.9em; margin-bottom:18px;"></p>
+      <div style="display:flex; gap:8px; margin-bottom:18px;" id="star-selector">
+        <span class="star-btn" data-star="1" onclick="selectStar(1)"
+          style="font-size:2rem; cursor:pointer; color:#ccc;">★</span>
+        <span class="star-btn" data-star="2" onclick="selectStar(2)"
+          style="font-size:2rem; cursor:pointer; color:#ccc;">★</span>
+        <span class="star-btn" data-star="3" onclick="selectStar(3)"
+          style="font-size:2rem; cursor:pointer; color:#ccc;">★</span>
+        <span class="star-btn" data-star="4" onclick="selectStar(4)"
+          style="font-size:2rem; cursor:pointer; color:#ccc;">★</span>
+        <span class="star-btn" data-star="5" onclick="selectStar(5)"
+          style="font-size:2rem; cursor:pointer; color:#ccc;">★</span>
+      </div>
+      <div class="form-group" style="margin-bottom:14px;">
+        <label style="color:var(--text);">Comment (optional)</label>
+        <textarea id="review-comment" rows="3" placeholder="Share your experience..."
+          style="width:100%; padding:12px; border-radius:10px; border:1px solid rgba(0,0,0,0.15); background:var(--secondary); color:var(--text); resize:vertical; font-family:inherit; font-size:0.95rem;"></textarea>
+      </div>
+      <div id="review-error" class="form-error"></div>
+      <button class="btn-primary" style="width:100%;" onclick="submitReview()">Submit Review</button>
+    </div>
+  </div>
+
+  <!-- Prescribe Medicine Modal -->
+  <div class="modal" id="prescribeModal">
+    <div class="modal-content" style="max-width: 600px; text-align: left;">
+      <button class="modal-close" onclick="closeModal('prescribeModal')">&times;</button>
+      <h3 style="color: var(--primary); margin-bottom: 6px;">💊 Prescribe Medicines</h3>
+      <p id="prescribe-patient-label" style="opacity:0.7; font-size:0.9em; margin-bottom:18px;"></p>
+      
+      <div id="prescribe-medicines-container" style="max-height: 400px; overflow-y: auto; padding-right: 5px; margin-bottom: 15px;">
+        <!-- Medicine rows will be added here -->
+        <div class="prescribe-med-row" style="display: grid; grid-template-columns: 2fr 1fr 1fr 1fr 1.5fr auto; gap: 8px; margin-bottom: 15px; align-items: end; background: rgba(255,255,255,0.03); padding: 12px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.05);">
+          <div class="form-group" style="margin-bottom:0;">
+            <label style="font-size: 0.75rem; opacity: 0.7;">Medicine Name</label>
+            <input type="text" class="med-name" placeholder="Paracetamol" required style="width:100%; padding:8px; border-radius:6px; border:1px solid rgba(0,0,0,0.1); background:var(--secondary); color:var(--text); font-size: 0.9rem;">
+          </div>
+          <div class="form-group" style="margin-bottom:0;">
+            <label style="font-size: 0.75rem; opacity: 0.7;">Dosage</label>
+            <input type="text" class="med-dosage" placeholder="500mg" required style="width:100%; padding:8px; border-radius:6px; border:1px solid rgba(0,0,0,0.1); background:var(--secondary); color:var(--text); font-size: 0.9rem;">
+          </div>
+          <div class="form-group" style="margin-bottom:0;">
+            <label style="font-size: 0.75rem; opacity: 0.7;">Time</label>
+            <input type="time" class="med-time" required style="width:100%; padding:8px; border-radius:6px; border:1px solid rgba(0,0,0,0.1); background:var(--secondary); color:var(--text); font-size: 0.9rem;">
+          </div>
+          <div class="form-group" style="margin-bottom:0;">
+            <label style="font-size: 0.75rem; opacity: 0.7;">Days</label>
+            <input type="number" class="med-days" value="5" min="1" required style="width:100%; padding:8px; border-radius:6px; border:1px solid rgba(0,0,0,0.1); background:var(--secondary); color:var(--text); font-size: 0.9rem;">
+          </div>
+          <div class="form-group" style="margin-bottom:0;">
+            <label style="font-size: 0.75rem; opacity: 0.7;">Notes</label>
+            <input type="text" class="med-notes" placeholder="After meal" style="width:100%; padding:8px; border-radius:6px; border:1px solid rgba(0,0,0,0.1); background:var(--secondary); color:var(--text); font-size: 0.9rem;">
+          </div>
+          <button onclick="removePrescribeRow(this)" style="background: rgba(255, 77, 77, 0.1); color: #ff4d4d; border: 1px solid rgba(255, 77, 77, 0.2); border-radius: 6px; padding: 8px; cursor: pointer; visibility: hidden;">🗑️</button>
+        </div>
+      </div>
+
+      <button type="button" class="btn" onclick="addPrescribeRow()" style="width: 100%; margin-bottom: 20px; border: 1px dashed var(--primary); background: transparent; color: var(--primary); font-weight: 600;">+ Add Another Medicine</button>
+
+      <div id="prescribe-error" class="form-error"></div>
+      <button class="btn-primary" style="width:100%;" onclick="submitPrescription()">Save All Prescriptions</button>
+    </div>
+  </div>
+
+  <!-- Patient Health Records Modal -->
+  <div class="modal" id="patientRecordsModal">
+    <div class="modal-content" style="max-width: 500px; text-align: left; padding: 0; overflow: hidden; border: none;">
+      <button class="modal-close" onclick="closeModal('patientRecordsModal')" style="top: 20px; right: 20px; z-index: 10;">&times;</button>
+      
+      <div style="padding: 30px 30px 10px; background: linear-gradient(135deg, rgba(0, 120, 212, 0.05), rgba(0, 120, 212, 0.01));">
+        <h3 style="color: var(--primary); margin-bottom: 4px; display: flex; align-items: center; gap: 8px;">📋 Health Tracker</h3>
+        <p id="patient-records-label" style="opacity:0.7; font-size:0.85em; margin-bottom:0;"></p>
+      </div>
+
+      <div id="patient-records-summary-container" style="padding: 10px 30px 15px;">
+        <!-- Stats summary will be here -->
+      </div>
+      
+      <div style="padding: 0 30px 30px; max-height: 400px; overflow-y: auto;">
+        <div id="patient-med-history-list" class="med-list" style="margin-top: 0; box-shadow: none; background: transparent; padding: 0;">
+          <!-- Medicines will be rendered here -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- View Reviews Modal -->
+  <div class="modal" id="viewReviewsModal">
+    <div class="modal-content" style="max-width: 480px; text-align: left; max-height: 80vh; overflow-y: auto;">
+      <button class="modal-close" onclick="closeModal('viewReviewsModal')">&times;</button>
+      <h3 style="color: var(--primary); margin-bottom: 6px;">⭐ Patient Reviews</h3>
+      <p id="view-reviews-label" style="opacity:0.7; font-size:0.9em; margin-bottom:18px;"></p>
+      <div id="reviews-list-container"></div>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="app.js"></script>
+</body>
+
+</html>
